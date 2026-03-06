@@ -18,7 +18,7 @@ inputs:
   vllm_version:
     description: "vLLM git tag"
     required: false
-    default: "v0.9.0.1"
+    default: "v0.16.0"
   hf_token:
     description: "Hugging Face access token"
     required: false
@@ -59,13 +59,13 @@ runs:
       run: |
         mkdir ../.llm-actions && mv ./.llm-actions ../.llm-actions/vllm && cd ../.llm-actions/vllm
         pip install --upgrade pip
-        pip install "cmake>=3.26" wheel packaging ninja "setuptools-scm>=8" numpy
+        pip install -r "$GITHUB_ACTION_PATH/requirements-build.txt"
         pip install -v -r requirements/cpu.txt --extra-index-url https://download.pytorch.org/whl/cpu
         sudo -E VLLM_TARGET_DEVICE=cpu python setup.py install
 
     - name: Install Python libraries
       shell: bash
-      run: pip install openai huggingface_hub[cli]
+      run: pip install -r "$GITHUB_ACTION_PATH/requirements.txt"
 
     - name: Login to Hugging Face
       if: ${{ inputs.hf_token != '' }}
