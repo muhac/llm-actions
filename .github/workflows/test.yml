@@ -68,3 +68,41 @@ jobs:
 
       - name: Show response
         run: cat response.json | jq . || cat response.json
+
+      - name: Demo chat (no_think)
+        run: |
+          curl http://localhost:8000/v1/chat/completions \
+          -o response.json \
+          -H "Content-Type: application/json" \
+          -d '{
+              "model": "${{ matrix.model }}",
+              "messages": [
+                  {"role": "system", "content": "/no_think"},
+                  {"role": "user", "content": "How many times does the letter R appear in the word strawberry?"}
+              ]
+          }'
+
+      - name: Show response
+        run: cat response.json | jq . || cat response.json
+
+      - name: Demo chat (image)
+        continue-on-error: true
+        run: |
+          curl http://localhost:8000/v1/chat/completions \
+          -o response.json \
+          -H "Content-Type: application/json" \
+          -d '{
+              "model": "${{ matrix.model }}",
+              "messages": [
+                  {
+                      "role": "user",
+                      "content": [
+                          {"type": "image_url", "image_url": {"url": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg"}},
+                          {"type": "text", "text": "Describe this image."}
+                      ]
+                  }
+              ]
+          }'
+
+      - name: Show response
+        run: cat response.json | jq . || cat response.json
