@@ -25,7 +25,7 @@ jobs:
 
       - name: Run LLM inference
         id: run_llm
-        uses: muhac/llm-actions@v1
+        uses: ./
         with:
           model: ${{ matrix.model }}
 
