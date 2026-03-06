@@ -14,7 +14,7 @@ inputs:
   model:
     description: "Model name"
     required: false
-    default: "Qwen/Qwen3-1.7B"
+    default: "Qwen/Qwen3.5-2B"
   vllm_version:
     description: "vLLM git tag"
     required: false

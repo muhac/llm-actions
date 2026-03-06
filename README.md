@@ -25,8 +25,8 @@ jobs:
         uses: muhac/llm-actions@v1
         # below are optional inputs
         with:
-          model: Qwen/Qwen3-1.7B
-          vllm_version: v0.9.0.1
+          model: Qwen/Qwen3.5-2B
+          vllm_version: v0.16.0
           hf_token: ${{ secrets.HF_TOKEN }}
 
       # The rest of your workflow...
@@ -34,8 +34,8 @@ jobs:
 
 ### Inputs
 
-- `model`: The model to use for inference. Default is `Qwen/Qwen3-1.7B`.
-- `vllm_version`: The version of [vllm](https://github.com/vllm-project/vllm) to use. I tested with `v0.9.0.1`. You may want a newer version for support of more models, but the compiling process may be different.
+- `model`: The model to use for inference. Default is `Qwen/Qwen3.5-2B`.
+- `vllm_version`: The version of [vllm](https://github.com/vllm-project/vllm) to use. Tested with `v0.16.0`. You may want a newer version for support of more models, but the compiling process may be different.
 - `hf_token`: The Hugging Face token to use for downloading the model. If you are using a public model, you can leave it empty. If you are using a private model, you need to provide your Hugging Face token.
 
 ### Outputs
@@ -50,7 +50,7 @@ jobs:
 
 This repository contains the code to run LLMs for inference in GitHub Actions. You can run LLMs hosted by vLLM, or write your own code to run LLMs in GitHub Actions. [Here are some examples with tested models.](https://github.com/muhac/llm-actions/blob/main/.github/workflows/dev.yml)
 
-`Qwen/Qwen2.5-3B-Instruct` is recommended for the best performance and speed. If you want to use a reasoning model, `Qwen/Qwen3-1.7B` is a good starting point, as larger models are slower at thinking.
+`Qwen/Qwen3.5-2B` is recommended as the default — it offers a good balance of speed and quality. For vision tasks, `Qwen/Qwen3-VL-2B-Instruct` is a compact multimodal model that fits comfortably within the runner's memory. If you want to disable thinking on Qwen3 models, add `/no_think` as the system prompt.
 
 For latest models, checkout [Open LLM Leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard#/?params=-1%2C6&official=true). Newer versions of vllm and transformers may support more models.
 
