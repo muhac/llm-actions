@@ -102,7 +102,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "vllm-project/vllm"
-          ref: "v0.16.0"
+          ref: "v0.16.1rc0"
           path: vllm
 
       - name: Install OS  dependencies

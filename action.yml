@@ -18,7 +18,7 @@ inputs:
   vllm_version:
     description: "vLLM git tag"
     required: false
-    default: "v0.16.0"
+    default: "v0.16.1rc0"
   hf_token:
     description: "Hugging Face access token"
     required: false
