@@ -67,20 +67,14 @@ runs:
       shell: bash
       run: pip install -r "$GITHUB_ACTION_PATH/requirements.txt"
 
-    - name: Login to Hugging Face
-      if: ${{ inputs.hf_token != '' }}
-      shell: bash
-      env:
-        HF: ${{ inputs.hf_token }}
-      run: hf auth login --token "$HF"
-      continue-on-error: true
-
     #########################################
     # 2. Run vLLM server
     #########################################
 
     - name: Run vLLM server
       shell: bash
+      env:
+        HF_TOKEN: ${{ inputs.hf_token }}
       run: vllm serve "${{ inputs.model }}" &> ../.llm-actions/vllm.log &
 
     #########################################
@@ -109,6 +103,8 @@ runs:
     - name: Retry if max seq len exceeded
       if: steps.check_server.outputs.status == 'maxlen'
       shell: bash
+      env:
+        HF_TOKEN: ${{ inputs.hf_token }}
       run: |
         pkill -f "vllm.serve" || true
         len=$(grep -m1 -oP "tokens that can be stored in KV cache \\(\\K[0-9]+" ../.llm-actions/vllm.log)

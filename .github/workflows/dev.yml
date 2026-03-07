@@ -46,12 +46,8 @@ jobs:
       - name: Start Docker Container
         run: |
           docker run -d --name container -v ./:/srv \
+          -e HF_TOKEN=${{ secrets.HF }} \
           muhac/jupyter-pytorch:env-2502a tail -f /dev/null
-
-      - name: Login to Hugging Face
-        run: |
-          docker exec container bash -i -c "hf auth login --token ${{ secrets.HF }}"
-        continue-on-error: true
 
       - name: Run LLM
         run: |
@@ -122,13 +118,9 @@ jobs:
       - name: Install Python libraries
         run: pip install -r requirements.txt
 
-      - name: Login to Hugging Face
-        env:
-          HF: ${{ secrets.HF }}
-        run: hf auth login --token "$HF"
-        continue-on-error: true
-
       - name: Run vLLM server
+        env:
+          HF_TOKEN: ${{ secrets.HF }}
         run: vllm serve "${{ matrix.model }}" &> vllm.log &
 
       - name: Check server status
@@ -156,6 +148,8 @@ jobs:
 
       - name: Run models (retry)
         if: steps.check_server.outcome != 'success'
+        env:
+          HF_TOKEN: ${{ secrets.HF }}
         run: vllm serve "${{ matrix.model }}" --max-model-len ${{ steps.check_maxlen.outputs.allowed_len }} &> vllm.log &
 
       - name: Wait for server to be ready
