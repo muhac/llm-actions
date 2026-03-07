@@ -110,6 +110,7 @@ jobs:
       - name: Build vLLM
         run: |
           cd vllm
+          python3 ../patches/apply-patches.py .
           pip install --upgrade pip
           pip install -r ../requirements-build.txt
           pip install -v -r requirements/cpu.txt --extra-index-url https://download.pytorch.org/whl/cpu
@@ -157,6 +158,10 @@ jobs:
           for i in {1..360}; do
               if curl -sSf http://localhost:8000/v1/models > /dev/null; then
                   echo "vLLM server is ready"; exit 0
+              fi
+              if ! pgrep -f "vllm.serve" > /dev/null; then
+                  echo "vLLM server process exited unexpectedly"
+                  cat vllm.log && exit 1
               fi
               sleep 5
           done
