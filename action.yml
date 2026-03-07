@@ -59,6 +59,7 @@ runs:
       run: |
         mkdir ../.llm-actions && mv ./.llm-actions ../.llm-actions/vllm && cd ../.llm-actions/vllm
         python3 "$GITHUB_ACTION_PATH/patches/fix_mla_decode.py"
+        python3 "$GITHUB_ACTION_PATH/patches/fix_cpu_linear_nd.py"
         pip install --upgrade pip
         pip install -r "$GITHUB_ACTION_PATH/requirements-build.txt"
         pip install -v -r requirements/cpu.txt --extra-index-url https://download.pytorch.org/whl/cpu
