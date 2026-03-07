@@ -22,6 +22,9 @@ inputs:
   hf_token:
     description: "Hugging Face access token"
     required: false
+  max_model_len:
+    description: "Maximum model context length (e.g. 4096). Defaults to the model's native context window."
+    required: false
 
 outputs:
   logs:
@@ -75,7 +78,11 @@ runs:
       shell: bash
       env:
         HF_TOKEN: ${{ inputs.hf_token }}
-      run: vllm serve "${{ inputs.model }}" &> ../.llm-actions/vllm.log &
+        MAX_MODEL_LEN: ${{ inputs.max_model_len }}
+      run: |
+        vllm serve "${{ inputs.model }}" \
+          ${MAX_MODEL_LEN:+--max-model-len "$MAX_MODEL_LEN"} \
+          &> ../.llm-actions/vllm.log &
 
     #########################################
     # 3. Error handling: max seq len exceeded
@@ -105,10 +112,14 @@ runs:
       shell: bash
       env:
         HF_TOKEN: ${{ inputs.hf_token }}
+        MAX_MODEL_LEN: ${{ inputs.max_model_len }}
       run: |
         pkill -f "vllm.serve" || true
         len=$(grep -m1 -oP "tokens that can be stored in KV cache \\(\\K[0-9]+" ../.llm-actions/vllm.log)
-        vllm serve "${{ inputs.model }}" --max-model-len $len &> ../.llm-actions/vllm.log &
+        # user-provided max_model_len takes priority over the KV-cache-derived fallback
+        vllm serve "${{ inputs.model }}" \
+          --max-model-len "${MAX_MODEL_LEN:-$len}" \
+          &> ../.llm-actions/vllm.log &
 
     #########################################
     # 4. Wait for server to be ready

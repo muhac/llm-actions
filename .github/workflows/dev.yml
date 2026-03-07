@@ -121,7 +121,7 @@ jobs:
       - name: Run vLLM server
         env:
           HF_TOKEN: ${{ secrets.HF }}
-        run: vllm serve "${{ matrix.model }}" &> vllm.log &
+        run: vllm serve "${{ matrix.model }}" --max-model-len 4096 &> vllm.log &
 
       - name: Check server status
         id: check_server

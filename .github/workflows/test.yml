@@ -28,6 +28,7 @@ jobs:
         uses: ./
         with:
           model: ${{ matrix.model }}
+          max_model_len: "4096"
 
       - name: Show vLLM logs
         run: echo "${{ steps.run_llm.outputs.logs }}"
