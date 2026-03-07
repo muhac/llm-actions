@@ -50,7 +50,7 @@ jobs:
 
       - name: Login to Hugging Face
         run: |
-          docker exec container bash -i -c "huggingface-cli login --token ${{ secrets.HF }}"
+          docker exec container bash -i -c "hf auth login --token ${{ secrets.HF }}"
         continue-on-error: true
 
       - name: Run LLM
@@ -114,8 +114,6 @@ jobs:
       - name: Build vLLM
         run: |
           cd vllm
-          python3 ../patches/fix_mla_decode.py
-          python3 ../patches/fix_cpu_linear_nd.py
           pip install --upgrade pip
           pip install -r ../requirements-build.txt
           pip install -v -r requirements/cpu.txt --extra-index-url https://download.pytorch.org/whl/cpu
@@ -127,7 +125,7 @@ jobs:
       - name: Login to Hugging Face
         env:
           HF: ${{ secrets.HF }}
-        run: huggingface-cli login --token "$HF"
+        run: hf auth login --token "$HF"
         continue-on-error: true
 
       - name: Run vLLM server
