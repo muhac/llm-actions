@@ -107,11 +107,11 @@ jobs:
       - name: Show response
         run: cat response.json | jq . || cat response.json
 
-    - name: Show logs
-      id: show_logs
-      shell: bash
-      run: |
-        cat ../.llm-actions/vllm.log
-        echo "log<<EOF"              >> "$GITHUB_OUTPUT"
-        cat ../.llm-actions/vllm.log >> "$GITHUB_OUTPUT"
-        echo "EOF"                   >> "$GITHUB_OUTPUT"
+      - name: Show logs
+        id: show_logs
+        shell: bash
+        run: |
+          cat ../.llm-actions/vllm.log
+          echo "log<<EOF"              >> "$GITHUB_OUTPUT"
+          cat ../.llm-actions/vllm.log >> "$GITHUB_OUTPUT"
+          echo "EOF"                   >> "$GITHUB_OUTPUT"
