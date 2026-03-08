@@ -46,7 +46,7 @@ jobs:
       - name: Start Docker Container
         run: |
           docker run -d --name container -v ./:/srv \
-          -e HF_TOKEN=${{ secrets.HF }} \
+          -e HF_TOKEN="${{ secrets.HF }}" \
           muhac/jupyter-pytorch:env-2502a tail -f /dev/null
 
       - name: Run LLM
