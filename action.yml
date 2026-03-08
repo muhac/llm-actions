@@ -16,7 +16,7 @@ inputs:
     required: false
     default: "Qwen/Qwen3-1.7B"
   vllm_version:
-    description: "vLLM git tag"
+    description: "vLLM version tag (e.g. v0.17.0)"
     required: false
     default: "v0.17.0"
   hf_token:
@@ -37,31 +37,14 @@ runs:
 
   steps:
     #########################################
-    # 1. Build vLLM (CPU)
+    # 1. Pull vLLM Docker image
     #########################################
 
-    - name: Checkout vLLM
-      uses: actions/checkout@v4
-      with:
-        repository: "vllm-project/vllm"
-        ref: ${{ inputs.vllm_version }}
-        path: ./.llm-actions
-
-    - name: Install OS dependencies
+    - name: Pull vLLM image
       shell: bash
       run: |
-        sudo apt-get update -y
-        sudo apt-get install -y gcc-12 g++-12 libnuma-dev jq
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 10 --slave /usr/bin/g++ g++ /usr/bin/g++-12
-
-    - name: Build vLLM
-      shell: bash
-      run: |
-        mkdir ../.llm-actions && mv ./.llm-actions ../.llm-actions/vllm && cd ../.llm-actions/vllm
-        pip install --upgrade pip
-        pip install -r "$GITHUB_ACTION_PATH/requirements-build.txt"
-        pip install -v -r requirements/cpu.txt --extra-index-url https://download.pytorch.org/whl/cpu
-        sudo -E VLLM_TARGET_DEVICE=cpu python setup.py install
+        mkdir -p ../.llm-actions
+        docker pull vllm/vllm-openai-cpu:${{ inputs.vllm_version }}-x86_64
 
     - name: Install Python libraries
       shell: bash
@@ -76,8 +59,13 @@ runs:
       env:
         HF_TOKEN: ${{ inputs.hf_token }}
       run: |
-        vllm serve "${{ inputs.model }}" \
-          &> ../.llm-actions/vllm.log &
+        docker run -d --name vllm-server \
+          -v ~/.cache/huggingface:/root/.cache/huggingface \
+          -p 8000:8000 \
+          --env "HF_TOKEN=${HF_TOKEN}" \
+          vllm/vllm-openai-cpu:${{ inputs.vllm_version }}-x86_64 \
+          --model "${{ inputs.model }}"
+        docker logs -f vllm-server >> ../.llm-actions/vllm.log 2>&1 &
 
     #########################################
     # 3. Error handling: max seq len exceeded
@@ -108,11 +96,17 @@ runs:
       env:
         HF_TOKEN: ${{ inputs.hf_token }}
       run: |
-        pkill -f "vllm.serve" || true
+        docker stop vllm-server || true
+        docker rm vllm-server || true
         len=$(grep -m1 -oP "tokens that can be stored in KV cache \\(\\K[0-9]+" ../.llm-actions/vllm.log)
-        vllm serve "${{ inputs.model }}" \
-          --max-model-len "$len" \
-          &> ../.llm-actions/vllm.log &
+        docker run -d --name vllm-server \
+          -v ~/.cache/huggingface:/root/.cache/huggingface \
+          -p 8000:8000 \
+          --env "HF_TOKEN=${HF_TOKEN}" \
+          vllm/vllm-openai-cpu:${{ inputs.vllm_version }}-x86_64 \
+          --model "${{ inputs.model }}" \
+          --max-model-len "$len"
+        docker logs -f vllm-server >> ../.llm-actions/vllm.log 2>&1 &
 
     #########################################
     # 4. Wait for server to be ready
@@ -125,8 +119,8 @@ runs:
           if curl -sSf http://localhost:8000/v1/models > /dev/null; then
             echo "vLLM server is ready"; exit 0
           fi
-          if ! pgrep -f "vllm.serve" > /dev/null; then
-            echo "vLLM server process exited unexpectedly"
+          if ! docker inspect -f '{{.State.Running}}' vllm-server 2>/dev/null | grep -q "true"; then
+            echo "vLLM server container exited unexpectedly"
             cat ../.llm-actions/vllm.log && exit 1
           fi
           sleep 5

@@ -87,26 +87,8 @@ jobs:
           large-packages: false
           swap-storage: false
 
-      - name: Checkout vLLM
-        uses: actions/checkout@v4
-        with:
-          repository: "vllm-project/vllm"
-          ref: "v0.17.0"
-          path: vllm
-
-      - name: Install OS  dependencies
-        run: |
-          sudo apt-get update  -y
-          sudo apt-get install -y gcc-12 g++-12 libnuma-dev jq
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 10 --slave /usr/bin/g++ g++ /usr/bin/g++-12
-
-      - name: Build vLLM
-        run: |
-          cd vllm
-          pip install --upgrade pip
-          pip install -r ../requirements-build.txt
-          pip install -v -r requirements/cpu.txt --extra-index-url https://download.pytorch.org/whl/cpu
-          sudo -E VLLM_TARGET_DEVICE=cpu python setup.py install
+      - name: Pull vLLM image
+        run: docker pull vllm/vllm-openai-cpu:v0.17.0-x86_64
 
       - name: Install Python libraries
         run: pip install -r requirements.txt
@@ -114,7 +96,14 @@ jobs:
       - name: Run vLLM server
         env:
           HF_TOKEN: ${{ secrets.HF }}
-        run: vllm serve "${{ matrix.model }}" &> vllm.log &
+        run: |
+          docker run -d --name vllm-server \
+            -v ~/.cache/huggingface:/root/.cache/huggingface \
+            -p 8000:8000 \
+            --env "HF_TOKEN=${HF_TOKEN}" \
+            vllm/vllm-openai-cpu:v0.17.0-x86_64 \
+            --model "${{ matrix.model }}"
+          docker logs -f vllm-server > vllm.log 2>&1 &
 
       - name: Check server status
         id: check_server
@@ -143,7 +132,17 @@ jobs:
         if: steps.check_server.outcome != 'success'
         env:
           HF_TOKEN: ${{ secrets.HF }}
-        run: vllm serve "${{ matrix.model }}" --max-model-len ${{ steps.check_maxlen.outputs.allowed_len }} &> vllm.log &
+        run: |
+          docker stop vllm-server || true
+          docker rm vllm-server || true
+          docker run -d --name vllm-server \
+            -v ~/.cache/huggingface:/root/.cache/huggingface \
+            -p 8000:8000 \
+            --env "HF_TOKEN=${HF_TOKEN}" \
+            vllm/vllm-openai-cpu:v0.17.0-x86_64 \
+            --model "${{ matrix.model }}" \
+            --max-model-len ${{ steps.check_maxlen.outputs.allowed_len }}
+          docker logs -f vllm-server >> vllm.log 2>&1 &
 
       - name: Wait for server to be ready
         run: |
@@ -151,8 +150,8 @@ jobs:
               if curl -sSf http://localhost:8000/v1/models > /dev/null; then
                   echo "vLLM server is ready"; exit 0
               fi
-              if ! pgrep -f "vllm.serve" > /dev/null; then
-                  echo "vLLM server process exited unexpectedly"
+              if ! docker inspect -f '{{.State.Running}}' vllm-server 2>/dev/null | grep -q "true"; then
+                  echo "vLLM server container exited unexpectedly"
                   cat vllm.log && exit 1
               fi
               sleep 5
