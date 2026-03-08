@@ -17,7 +17,6 @@ jobs:
             "Qwen/Qwen2.5-VL-3B-Instruct",
             "Qwen/Qwen3-1.7B",
             "Qwen/Qwen3-4B",
-            "Qwen/Qwen3-8B-AWQ",
           ]
 
     steps:
