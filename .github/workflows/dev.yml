@@ -75,7 +75,6 @@ jobs:
             "google/gemma-2-2b-it",
             "Qwen/Qwen2.5-3B-Instruct",
             "Qwen/Qwen3-4B",
-            "Qwen/Qwen3-8B-AWQ",
           ]
 
     steps:
