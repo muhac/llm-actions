@@ -18,7 +18,7 @@ inputs:
   vllm_version:
     description: "vLLM git tag"
     required: false
-    default: "v0.9.0.1"
+    default: "v0.17.0"
   hf_token:
     description: "Hugging Face access token"
     required: false
@@ -59,21 +59,13 @@ runs:
       run: |
         mkdir ../.llm-actions && mv ./.llm-actions ../.llm-actions/vllm && cd ../.llm-actions/vllm
         pip install --upgrade pip
-        pip install "cmake>=3.26" wheel packaging ninja "setuptools-scm>=8" numpy
+        pip install -r "$GITHUB_ACTION_PATH/requirements-build.txt"
         pip install -v -r requirements/cpu.txt --extra-index-url https://download.pytorch.org/whl/cpu
         sudo -E VLLM_TARGET_DEVICE=cpu python setup.py install
 
     - name: Install Python libraries
       shell: bash
-      run: pip install openai huggingface_hub[cli]
-
-    - name: Login to Hugging Face
-      if: ${{ inputs.hf_token != '' }}
-      shell: bash
-      env:
-        HF: ${{ inputs.hf_token }}
-      run: huggingface-cli login --token "$HF"
-      continue-on-error: true
+      run: pip install -r "$GITHUB_ACTION_PATH/requirements.txt"
 
     #########################################
     # 2. Run vLLM server
@@ -81,7 +73,11 @@ runs:
 
     - name: Run vLLM server
       shell: bash
-      run: vllm serve "${{ inputs.model }}" &> ../.llm-actions/vllm.log &
+      env:
+        HF_TOKEN: ${{ inputs.hf_token }}
+      run: |
+        vllm serve "${{ inputs.model }}" \
+          &> ../.llm-actions/vllm.log &
 
     #########################################
     # 3. Error handling: max seq len exceeded
@@ -109,10 +105,14 @@ runs:
     - name: Retry if max seq len exceeded
       if: steps.check_server.outputs.status == 'maxlen'
       shell: bash
+      env:
+        HF_TOKEN: ${{ inputs.hf_token }}
       run: |
         pkill -f "vllm.serve" || true
         len=$(grep -m1 -oP "tokens that can be stored in KV cache \\(\\K[0-9]+" ../.llm-actions/vllm.log)
-        vllm serve "${{ inputs.model }}" --max-model-len $len &> ../.llm-actions/vllm.log &
+        vllm serve "${{ inputs.model }}" \
+          --max-model-len "$len" \
+          &> ../.llm-actions/vllm.log &
 
     #########################################
     # 4. Wait for server to be ready
@@ -124,6 +124,10 @@ runs:
         for i in {1..360}; do
           if curl -sSf http://localhost:8000/v1/models > /dev/null; then
             echo "vLLM server is ready"; exit 0
+          fi
+          if ! pgrep -f "vllm.serve" > /dev/null; then
+            echo "vLLM server process exited unexpectedly"
+            cat ../.llm-actions/vllm.log && exit 1
           fi
           sleep 5
         done
