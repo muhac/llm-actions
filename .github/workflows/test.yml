@@ -29,7 +29,9 @@ jobs:
           model: ${{ matrix.model }}
 
       - name: Show vLLM logs
-        run: echo "${{ steps.run_llm.outputs.logs }}"
+        env:
+          VLLM_LOGS: ${{ steps.run_llm.outputs.logs }}
+        run: echo "$VLLM_LOGS"
 
       - name: List files
         run: tree -a -L 3 ..
@@ -105,12 +107,3 @@ jobs:
 
       - name: Show response
         run: cat response.json | jq . || cat response.json
-
-      - name: Show logs
-        id: show_logs
-        shell: bash
-        run: |
-          cat ../.llm-actions/vllm.log
-          echo "log<<EOF"              >> "$GITHUB_OUTPUT"
-          cat ../.llm-actions/vllm.log >> "$GITHUB_OUTPUT"
-          echo "EOF"                   >> "$GITHUB_OUTPUT"

@@ -46,10 +46,6 @@ runs:
         mkdir -p ../.llm-actions
         docker pull vllm/vllm-openai-cpu:${{ inputs.vllm_version }}-x86_64
 
-    - name: Install Python libraries
-      shell: bash
-      run: pip install -r "$GITHUB_ACTION_PATH/requirements.txt"
-
     #########################################
     # 2. Run vLLM server
     #########################################
