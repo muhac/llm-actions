@@ -69,13 +69,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        model:
-          [
-            "Qwen/Qwen3-1.7B",
-            "google/gemma-2-2b-it",
-            "Qwen/Qwen2.5-3B-Instruct",
-            "Qwen/Qwen3-4B",
-          ]
+        include:
+          - model: "Qwen/Qwen3-1.7B"
+          - model: "google/gemma-2-2b-it"
+          - model: "Qwen/Qwen2.5-3B-Instruct"
+          - model: "Qwen/Qwen3-4B"
+            kv_cache_space: "4"
+            max_model_len: "29056"
 
     steps:
       - name: Checkout
@@ -93,13 +93,17 @@ jobs:
       - name: Run vLLM server
         env:
           HF_TOKEN: ${{ secrets.HF }}
+          VLLM_CPU_KVCACHE_SPACE: ${{ matrix.kv_cache_space }}
+          MAX_MODEL_LEN: ${{ matrix.max_model_len }}
         run: |
           docker run -d --name vllm-server \
             -v ~/.cache/huggingface:/root/.cache/huggingface \
             -p 8000:8000 \
             --env "HF_TOKEN=${HF_TOKEN}" \
+            ${VLLM_CPU_KVCACHE_SPACE:+--env "VLLM_CPU_KVCACHE_SPACE=${VLLM_CPU_KVCACHE_SPACE}"} \
             vllm/vllm-openai-cpu:v0.17.0-x86_64 \
-            --model "${{ matrix.model }}"
+            --model "${{ matrix.model }}" \
+            ${MAX_MODEL_LEN:+--max-model-len "$MAX_MODEL_LEN"}
           docker logs -f vllm-server > vllm.log 2>&1 &
 
       - name: Check server status
@@ -109,7 +113,7 @@ jobs:
               if curl -sSf http://localhost:8000/v1/models > /dev/null; then
                 exit 0  # Server started
               fi
-              if grep -q "ValueError: The model's max seq len" vllm.log; then
+              if grep -Eq "ValueError: The model's max seq len|estimated maximum model length is" vllm.log; then
                 exit 1  # Error detected
               fi
               sleep 10
@@ -121,7 +125,10 @@ jobs:
         if: steps.check_server.outcome != 'success'
         id: check_maxlen
         run: |
-          allowed_len=$(grep -m1 -oP "tokens that can be stored in KV cache \\(\\K[0-9]+" vllm.log)
+          allowed_len=$(grep -m1 -oP "tokens that can be stored in KV cache \(\K[0-9]+" vllm.log || true)
+          if [ -z "$allowed_len" ]; then
+            allowed_len=$(grep -m1 -oP "estimated maximum model length is \K[0-9]+" vllm.log || true)
+          fi
           echo "Max sequence length issue detected, retrying with allowed length: $allowed_len"
           echo "allowed_len=$allowed_len" >> "$GITHUB_OUTPUT"
 
@@ -129,6 +136,7 @@ jobs:
         if: steps.check_server.outcome != 'success'
         env:
           HF_TOKEN: ${{ secrets.HF }}
+          VLLM_CPU_KVCACHE_SPACE: ${{ matrix.kv_cache_space }}
         run: |
           docker stop vllm-server || true
           docker rm vllm-server || true
@@ -136,6 +144,7 @@ jobs:
             -v ~/.cache/huggingface:/root/.cache/huggingface \
             -p 8000:8000 \
             --env "HF_TOKEN=${HF_TOKEN}" \
+            ${VLLM_CPU_KVCACHE_SPACE:+--env "VLLM_CPU_KVCACHE_SPACE=${VLLM_CPU_KVCACHE_SPACE}"} \
             vllm/vllm-openai-cpu:v0.17.0-x86_64 \
             --model "${{ matrix.model }}" \
             --max-model-len ${{ steps.check_maxlen.outputs.allowed_len }}
