@@ -17,6 +17,7 @@ jobs:
           - model: "Qwen/Qwen3-1.7B"
           - model: "Qwen/Qwen3-4B"
             kv_cache_space: "4"
+            max_model_len: "29056"
 
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +34,7 @@ jobs:
         with:
           model: ${{ matrix.model }}
           kv_cache_space: ${{ matrix.kv_cache_space }}
+          max_model_len: ${{ matrix.max_model_len }}
 
       - name: Show vLLM logs
         env:

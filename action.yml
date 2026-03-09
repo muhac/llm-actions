@@ -25,6 +25,9 @@ inputs:
   kv_cache_space:
     description: "CPU KV cache size in GiB (VLLM_CPU_KVCACHE_SPACE)"
     required: false
+  max_model_len:
+    description: "Maximum sequence length for the model (--max-model-len)"
+    required: false
 
 outputs:
   logs:
@@ -58,6 +61,7 @@ runs:
       env:
         HF_TOKEN: ${{ inputs.hf_token }}
         VLLM_CPU_KVCACHE_SPACE: ${{ inputs.kv_cache_space }}
+        MAX_MODEL_LEN: ${{ inputs.max_model_len }}
       run: |
         docker run -d --name vllm-server \
           -v ~/.cache/huggingface:/root/.cache/huggingface \
@@ -65,7 +69,8 @@ runs:
           --env "HF_TOKEN=${HF_TOKEN}" \
           ${VLLM_CPU_KVCACHE_SPACE:+--env "VLLM_CPU_KVCACHE_SPACE=${VLLM_CPU_KVCACHE_SPACE}"} \
           vllm/vllm-openai-cpu:${{ inputs.vllm_version }}-x86_64 \
-          --model "${{ inputs.model }}"
+          --model "${{ inputs.model }}" \
+          ${MAX_MODEL_LEN:+--max-model-len "$MAX_MODEL_LEN"}
         docker logs -f vllm-server >> ../.llm-actions/vllm.log 2>&1 &
 
     #########################################
@@ -82,7 +87,7 @@ runs:
             status="ready"
             break
           fi
-          if grep -q "ValueError: The model's max seq len" ../.llm-actions/vllm.log; then
+          if grep -Eq "ValueError: The model's max seq len|estimated maximum model length is" ../.llm-actions/vllm.log; then
             status="maxlen"
             break
           fi
@@ -100,7 +105,10 @@ runs:
       run: |
         docker stop vllm-server || true
         docker rm vllm-server || true
-        len=$(grep -m1 -oP "tokens that can be stored in KV cache \\(\\K[0-9]+" ../.llm-actions/vllm.log)
+        len=$(grep -m1 -oP "tokens that can be stored in KV cache \(\K[0-9]+" ../.llm-actions/vllm.log || true)
+        if [ -z "$len" ]; then
+          len=$(grep -m1 -oP "estimated maximum model length is \K[0-9]+" ../.llm-actions/vllm.log || true)
+        fi
         docker run -d --name vllm-server \
           -v ~/.cache/huggingface:/root/.cache/huggingface \
           -p 8000:8000 \
