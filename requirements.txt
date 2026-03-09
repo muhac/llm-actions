@@ -1,3 +1,0 @@
-# Runtime dependencies for the LLM action
-openai>=1.10.0,<2.0
-huggingface_hub[cli]>=0.20.0,<1.0

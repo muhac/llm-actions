@@ -16,7 +16,7 @@ inputs:
     required: false
     default: "Qwen/Qwen3-1.7B"
   vllm_version:
-    description: "vLLM version tag (e.g. v0.17.0)"
+    description: "vLLM version tag"
     required: false
     default: "v0.17.0"
   hf_token:
