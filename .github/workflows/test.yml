@@ -11,22 +11,28 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        model:
-          [
-            "Qwen/Qwen2.5-1.5B-Instruct",
-            "Qwen/Qwen2.5-VL-3B-Instruct",
-            "Qwen/Qwen3-1.7B",
-            "Qwen/Qwen3-4B",
-          ]
+        include:
+          - model: "Qwen/Qwen2.5-1.5B-Instruct"
+          - model: "Qwen/Qwen2.5-VL-3B-Instruct"
+          - model: "Qwen/Qwen3-1.7B"
+          - model: "Qwen/Qwen3-4B"
+            kv_cache_space: "4"
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          large-packages: false
+          swap-storage: false
 
       - name: Run LLM inference
         id: run_llm
         uses: ./
         with:
           model: ${{ matrix.model }}
+          kv_cache_space: ${{ matrix.kv_cache_space }}
 
       - name: Show vLLM logs
         env:

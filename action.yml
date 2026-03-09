@@ -22,6 +22,9 @@ inputs:
   hf_token:
     description: "Hugging Face access token"
     required: false
+  kv_cache_space:
+    description: "CPU KV cache size in GiB (VLLM_CPU_KVCACHE_SPACE)"
+    required: false
 
 outputs:
   logs:
@@ -54,11 +57,13 @@ runs:
       shell: bash
       env:
         HF_TOKEN: ${{ inputs.hf_token }}
+        VLLM_CPU_KVCACHE_SPACE: ${{ inputs.kv_cache_space }}
       run: |
         docker run -d --name vllm-server \
           -v ~/.cache/huggingface:/root/.cache/huggingface \
           -p 8000:8000 \
           --env "HF_TOKEN=${HF_TOKEN}" \
+          ${VLLM_CPU_KVCACHE_SPACE:+--env "VLLM_CPU_KVCACHE_SPACE=${VLLM_CPU_KVCACHE_SPACE}"} \
           vllm/vllm-openai-cpu:${{ inputs.vllm_version }}-x86_64 \
           --model "${{ inputs.model }}"
         docker logs -f vllm-server >> ../.llm-actions/vllm.log 2>&1 &
@@ -91,6 +96,7 @@ runs:
       shell: bash
       env:
         HF_TOKEN: ${{ inputs.hf_token }}
+        VLLM_CPU_KVCACHE_SPACE: ${{ inputs.kv_cache_space }}
       run: |
         docker stop vllm-server || true
         docker rm vllm-server || true
@@ -99,6 +105,7 @@ runs:
           -v ~/.cache/huggingface:/root/.cache/huggingface \
           -p 8000:8000 \
           --env "HF_TOKEN=${HF_TOKEN}" \
+          ${VLLM_CPU_KVCACHE_SPACE:+--env "VLLM_CPU_KVCACHE_SPACE=${VLLM_CPU_KVCACHE_SPACE}"} \
           vllm/vllm-openai-cpu:${{ inputs.vllm_version }}-x86_64 \
           --model "${{ inputs.model }}" \
           --max-model-len "$len"
