@@ -23,9 +23,9 @@ jobs:
 
       - name: Run LLM inference
         uses: muhac/llm-actions@v2
-        # below are optional inputs
         with:
           model: Qwen/Qwen3-1.7B
+          # below are optional inputs
           vllm_version: v0.17.0
           hf_token: ${{ secrets.HF_TOKEN }}
           kv_cache_space: 4
@@ -36,7 +36,7 @@ jobs:
 
 ### Inputs
 
-- `model`: The model to use for inference. Default is `Qwen/Qwen3-1.7B`.
+- `model`: The model to use for inference.
 - `vllm_version`: The version of [vllm](https://github.com/vllm-project/vllm) Docker image to use. Default is `v0.17.0`. You may want a newer version for support of more models.
 - `hf_token`: The Hugging Face token to use for downloading the model. If you are using a public model, you can leave it empty. If you are using a private model, you need to provide your Hugging Face token.
 - `kv_cache_space`: CPU KV cache size in GiB (`VLLM_CPU_KVCACHE_SPACE`). Optional, leave empty to use the vLLM default.

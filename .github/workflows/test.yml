@@ -14,11 +14,13 @@ jobs:
         include:
           - model: "google/gemma-3-1b-it"
           - model: "google/gemma-3-4b-it"
+            kv_cache_space: "4"
+            max_model_len: "8192"
           - model: "Qwen/Qwen2.5-VL-3B-Instruct"
           - model: "Qwen/Qwen3-1.7B"
           - model: "Qwen/Qwen3-4B"
             kv_cache_space: "4"
-            max_model_len: "32768"
+            max_model_len: "8192"
 
     steps:
       - uses: actions/checkout@v4

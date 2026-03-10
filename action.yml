@@ -13,7 +13,7 @@ branding:
 inputs:
   model:
     description: "Model name"
-    required: false
+    required: true
     default: "Qwen/Qwen3-1.7B"
   vllm_version:
     description: "vLLM version tag"
@@ -23,10 +23,10 @@ inputs:
     description: "Hugging Face access token"
     required: false
   kv_cache_space:
-    description: "CPU KV cache size in GiB (VLLM_CPU_KVCACHE_SPACE)"
+    description: "CPU KV cache size in GiB"
     required: false
   max_model_len:
-    description: "Maximum sequence length for the model (--max-model-len)"
+    description: "Maximum sequence length for the model"
     required: false
 
 outputs:
