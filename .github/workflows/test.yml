@@ -11,25 +11,35 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        model:
-          [
-            "Qwen/Qwen2.5-1.5B-Instruct",
-            "Qwen/Qwen2.5-VL-3B-Instruct",
-            "Qwen/Qwen3-1.7B",
-            "Qwen/Qwen3-4B",
-          ]
+        include:
+          - model: "Qwen/Qwen2.5-1.5B-Instruct"
+          - model: "Qwen/Qwen2.5-VL-3B-Instruct"
+          - model: "Qwen/Qwen3-1.7B"
+          - model: "Qwen/Qwen3-4B"
+            kv_cache_space: "4"
+            max_model_len: "29056"
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          large-packages: false
+          swap-storage: false
 
       - name: Run LLM inference
         id: run_llm
         uses: ./
         with:
           model: ${{ matrix.model }}
+          kv_cache_space: ${{ matrix.kv_cache_space }}
+          max_model_len: ${{ matrix.max_model_len }}
 
       - name: Show vLLM logs
-        run: echo "${{ steps.run_llm.outputs.logs }}"
+        env:
+          VLLM_LOGS: ${{ steps.run_llm.outputs.logs }}
+        run: echo "$VLLM_LOGS"
 
       - name: List files
         run: tree -a -L 3 ..
@@ -105,12 +115,3 @@ jobs:
 
       - name: Show response
         run: cat response.json | jq . || cat response.json
-
-      - name: Show logs
-        id: show_logs
-        shell: bash
-        run: |
-          cat ../.llm-actions/vllm.log
-          echo "log<<EOF"              >> "$GITHUB_OUTPUT"
-          cat ../.llm-actions/vllm.log >> "$GITHUB_OUTPUT"
-          echo "EOF"                   >> "$GITHUB_OUTPUT"
