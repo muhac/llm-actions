@@ -109,6 +109,9 @@ runs:
         if [ -z "$len" ]; then
           len=$(grep -m1 -oP "estimated maximum model length is \K[0-9]+" ../.llm-actions/vllm.log || true)
         fi
+        if [ -z "$len" ]; then
+          echo "Could not determine allowed model length from logs" && cat ../.llm-actions/vllm.log && exit 1
+        fi
         docker run -d --name vllm-server \
           -v ~/.cache/huggingface:/root/.cache/huggingface \
           -p 8000:8000 \
