@@ -36,7 +36,7 @@ jobs:
 
 ### Inputs
 
-- `model`: The model to use for inference.
+- `model`: **(Required)** The model to use for inference. Recommended: `Qwen/Qwen3-1.7B`.
 - `vllm_version`: The version of [vllm](https://github.com/vllm-project/vllm) Docker image to use. Default is `v0.17.0`. You may want a newer version for support of more models.
 - `hf_token`: The Hugging Face token to use for downloading the model. If you are using a public model, you can leave it empty. If you are using a private model, you need to provide your Hugging Face token.
 - `kv_cache_space`: CPU KV cache size in GiB (`VLLM_CPU_KVCACHE_SPACE`). Optional, leave empty to use the vLLM default.

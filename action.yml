@@ -14,7 +14,6 @@ inputs:
   model:
     description: "Model name"
     required: true
-    default: "Qwen/Qwen3-1.7B"
   vllm_version:
     description: "vLLM version tag"
     required: false
