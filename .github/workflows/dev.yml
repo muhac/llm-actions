@@ -70,6 +70,18 @@ jobs:
     strategy:
       matrix:
         include:
+          - model: "Qwen/Qwen3.5-0.8B"
+            language_model_only: "true"
+          - model: "Qwen/Qwen3.5-2B"
+            language_model_only: "true"
+          - model: "Qwen/Qwen3.5-4B"
+            kv_cache_space: "4"
+            max_model_len: "32768"
+            language_model_only: "true"
+          - model: "Qwen/Qwen3-VL-2B-Instruct"
+          - model: "Qwen/Qwen3-VL-4B-Thinking"
+            kv_cache_space: "4"
+            max_model_len: "32768"
           - model: "Qwen/Qwen3-1.7B"
           - model: "google/gemma-2-2b-it"
           - model: "Qwen/Qwen2.5-3B-Instruct"
@@ -95,6 +107,7 @@ jobs:
           HF_TOKEN: ${{ secrets.HF }}
           VLLM_CPU_KVCACHE_SPACE: ${{ matrix.kv_cache_space }}
           MAX_MODEL_LEN: ${{ matrix.max_model_len }}
+          LANGUAGE_MODEL_ONLY: ${{ matrix.language_model_only }}
         run: |
           docker run -d --name vllm-server \
             -v ~/.cache/huggingface:/root/.cache/huggingface \
@@ -103,7 +116,8 @@ jobs:
             ${VLLM_CPU_KVCACHE_SPACE:+--env "VLLM_CPU_KVCACHE_SPACE=${VLLM_CPU_KVCACHE_SPACE}"} \
             vllm/vllm-openai-cpu:v0.17.0-x86_64 \
             --model "${{ matrix.model }}" \
-            ${MAX_MODEL_LEN:+--max-model-len "$MAX_MODEL_LEN"}
+            ${MAX_MODEL_LEN:+--max-model-len "$MAX_MODEL_LEN"} \
+            ${LANGUAGE_MODEL_ONLY:+--language-model-only}
           docker logs -f vllm-server > vllm.log 2>&1 &
 
       - name: Check server status
@@ -143,6 +157,7 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF }}
           VLLM_CPU_KVCACHE_SPACE: ${{ matrix.kv_cache_space }}
+          LANGUAGE_MODEL_ONLY: ${{ matrix.language_model_only }}
         run: |
           docker stop vllm-server || true
           docker rm vllm-server || true
@@ -153,7 +168,8 @@ jobs:
             ${VLLM_CPU_KVCACHE_SPACE:+--env "VLLM_CPU_KVCACHE_SPACE=${VLLM_CPU_KVCACHE_SPACE}"} \
             vllm/vllm-openai-cpu:v0.17.0-x86_64 \
             --model "${{ matrix.model }}" \
-            --max-model-len "${{ steps.check_maxlen.outputs.allowed_len }}"
+            --max-model-len "${{ steps.check_maxlen.outputs.allowed_len }}" \
+            ${LANGUAGE_MODEL_ONLY:+--language-model-only}
           docker logs -f vllm-server >> vllm.log 2>&1 &
 
       - name: Wait for server to be ready

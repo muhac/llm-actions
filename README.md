@@ -41,6 +41,7 @@ jobs:
 - `hf_token`: The Hugging Face token to use for downloading the model. If you are using a public model, you can leave it empty. If you are using a private model, you need to provide your Hugging Face token.
 - `kv_cache_space`: CPU KV cache size in GiB (`VLLM_CPU_KVCACHE_SPACE`). Optional, leave empty to use the vLLM default.
 - `max_model_len`: Maximum sequence length for the model (`--max-model-len`). Optional, leave empty to use the model's default.
+- `language_model_only`: Set to `true` to skip multimodal modules and load only the language model (`--language-model-only`). Required for hybrid models such as `Qwen3.5`.
 
 ### Outputs
 
