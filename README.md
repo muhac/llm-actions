@@ -54,7 +54,7 @@ jobs:
 
 This repository contains the code to run LLMs for inference in GitHub Actions. You can run LLMs hosted by vLLM, or write your own code to run LLMs in GitHub Actions. [Here are some examples with tested models.](https://github.com/muhac/llm-actions/blob/main/.github/workflows/dev.yml)
 
-`Qwen/Qwen3-1.7B` is recommended as the default — it offers a good balance of speed and quality. The `Qwen/Qwen3.5` series (0.8B, 2B, 4B) are newer alternatives with improved performance at similar sizes. For vision tasks, `Qwen/Qwen3-VL-2B-Instruct` and `Qwen/Qwen2.5-VL-3B-Instruct` are compact multimodal models that fit comfortably within the runner's memory. If you want to disable thinking on Qwen3 and Qwen3.5 models, add `/no_think` as the system prompt.
+`Qwen/Qwen3-1.7B` is recommended as the default — it offers a good balance of speed and quality. For vision tasks, `Qwen/Qwen2.5-VL-3B-Instruct` is a compact multimodal model that fits comfortably within the runner's memory. If you want to disable thinking on Qwen3 models, add `/no_think` as the system prompt.
 
 For latest models, checkout [Open LLM Leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard#/?params=-1%2C6&official=true). Newer versions of vllm and transformers may support more models.
 
